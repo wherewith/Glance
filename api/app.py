@@ -14,7 +14,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings, AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -24,8 +24,23 @@ app = Flask(__name__)
 CORS(app)
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=OPENAI_API_KEY)
+# OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=OPENAI_API_KEY)
+AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
+AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
+AZURE_OPENAI_DEPLOYMENT = os.getenv('AZURE_OPENAI_DEPLOYMENT')
+AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION')
+AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT = os.getenv('AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT')
+llm = AzureChatOpenAI(
+    api_key=AZURE_OPENAI_API_KEY,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    azure_deployment=AZURE_OPENAI_DEPLOYMENT, 
+    api_version=AZURE_OPENAI_API_VERSION, 
+    temperature=0, 
+    max_tokens=None, 
+    timeout=None, 
+    max_retries=2
+)
 
 # Global variables
 vectorstore = None
@@ -60,7 +75,14 @@ def upload_file():
         
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splits = text_splitter.split_documents(docs)
-        vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
+        # vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
+        embeddings = AzureOpenAIEmbeddings(
+            api_key=AZURE_OPENAI_API_KEY,
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            azure_deployment=AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT, 
+            api_version=AZURE_OPENAI_API_VERSION
+        )
+        vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
         retriever = vectorstore.as_retriever()
         
         contextualize_q_system_prompt = """Given a chat history and the latest user question \
