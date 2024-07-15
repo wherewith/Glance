@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import atexit
-import shutil
+import tempfile
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -49,17 +49,21 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
     
     if file:
-        uploads_dir = os.path.join(os.getcwd(), 'uploads')
-        os.makedirs(uploads_dir, exist_ok=True)
+        file_content = file.read()
         
-        file_path = os.path.join(uploads_dir, file.filename)
-        file.save(file_path)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(file_content)
+            tmp_file_path = tmp_file.name
         
-        loader = PyMuPDFLoader(file_path)
-        docs = loader.load()
+        try:
+            loader = PyMuPDFLoader(tmp_file_path)
+            docs = loader.load()
+        finally:
+            os.remove(tmp_file_path)
         
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splits = text_splitter.split_documents(docs)
+        
         vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
         retriever = vectorstore.as_retriever()
         
@@ -105,18 +109,6 @@ def upload_file():
         
         return jsonify({"message": "File uploaded and processed successfully"}), 200
 
-@app.route('/get_uploaded_file', methods=['GET'])
-def get_uploaded_file():
-    uploads_dir = os.path.join(os.getcwd(), 'uploads')
-    if not os.path.exists(uploads_dir):
-        return jsonify({"error": "No files have been uploaded"}), 400
-
-    files = os.listdir(uploads_dir)
-    if not files:
-        return jsonify({"error": "No files found"}), 400
-
-    return jsonify({"files": files}), 200
-
 @app.route('/ask_question', methods=['POST'])
 def ask_question():
     global conversational_rag_chain
@@ -138,12 +130,6 @@ def ask_question():
     
     return jsonify({"answer": response}), 200
 
-def cleanup_uploads():
-    uploads_dir = 'uploads'
-    if os.path.exists(uploads_dir):
-        shutil.rmtree(uploads_dir)
-        print(f"Deleted {uploads_dir} directory and its contents.")
-
 def cleanup_chroma():
     global vectorstore
     if vectorstore:
@@ -153,14 +139,12 @@ def cleanup_chroma():
 @app.route('/cleanup', methods=['POST'])
 def cleanup():
     global vectorstore, conversational_rag_chain, store
-    cleanup_uploads()
     cleanup_chroma()
     vectorstore = None
     conversational_rag_chain = None
     store = {}
     return jsonify({"message": "Cleanup completed successfully."}), 200
 
-atexit.register(cleanup_uploads)
 atexit.register(cleanup_chroma)
 
 if __name__ == '__main__':
