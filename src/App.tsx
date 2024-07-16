@@ -117,14 +117,17 @@ function App() {
 
   return (
     <main className='flex h-screen'>
-      <div className='flex relative w-1/2 p-4 justify-center items-center border-x'>
+      <div className='flex relative w-1/2 p-4 justify-center items-center border-x group'>
         {!pdfUrl ? (
           <>
-            <input type="file" onChange={handleFileChangeAndUpload} accept=".pdf" className="absolute opacity-0 w-full h-full cursor-pointer" />
+            <input type="file" onChange={handleFileChangeAndUpload} accept=".pdf" className="absolute opacity-0 z-10 w-full h-full cursor-pointer" />
             {isLoading ? (
               <svg className="w-20 h-20 fill-neutral-400 animate-[spin_1.25s_linear_infinite]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M136,32V64a8,8,0,0,1-16,0V32a8,8,0,0,1,16,0Zm88,88H192a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-45.09,47.6a8,8,0,0,0-11.31,11.31l22.62,22.63a8,8,0,0,0,11.32-11.32ZM128,184a8,8,0,0,0-8,8v32a8,8,0,0,0,16,0V192A8,8,0,0,0,128,184ZM77.09,167.6,54.46,190.22a8,8,0,0,0,11.32,11.32L88.4,178.91A8,8,0,0,0,77.09,167.6ZM72,128a8,8,0,0,0-8-8H32a8,8,0,0,0,0,16H64A8,8,0,0,0,72,128ZM65.78,54.46A8,8,0,0,0,54.46,65.78L77.09,88.4A8,8,0,0,0,88.4,77.09Z"></path></svg>
             ) : (
+              <>
               <span>Click to upload a pdf!</span>
+              <svg className="absolute bottom-1/2 w-20 h-20 [&>*]:stroke-[1.5] [&>*]:stroke-neutral-400 fill-none group-hover:flex transition-all ease-in-out duration-300 opacity-0 group-hover:opacity-100 group-hover:-translate-y-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 20L18 20" strokeLinecap="round" strokeLinejoin="round"></path><path d="M12 16V4M12 4L15.5 7.5M12 4L8.5 7.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+              </>
             )}
           </>
         ) : (
@@ -133,7 +136,7 @@ function App() {
       </div>
       <div className='flex relative w-1/2 flex-col mt-4 p-4'>
         <nav className="absolute z-[9999] right-0 top-0 mr-8 h-8 w-8">
-          <button onClick={cleanup} className={`rounded-full w-full h-full flex justify-center items-center ${pdfUrl ? 'bg-blue-500' : "bg-neutral-300 pointer-events-none"}`}>
+          <button onClick={cleanup} className={`rounded-full w-full h-full flex justify-center items-center ${(pdfUrl || messages.length > 1) ? 'bg-blue-500' : "bg-neutral-300 pointer-events-none"}`}>
             <svg className="w-5 h-5 fill-none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 className="stroke-neutral-100"
@@ -166,11 +169,11 @@ function App() {
             placeholder="Send a message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleSendMessage())}
+            onKeyPress={(e) => ((e.key === 'Enter' && pdfUrl) && (e.preventDefault(), handleSendMessage()) || e.key === 'Enter' && e.preventDefault())}
           />
-          <button className={`flex items-end ${input ? '' : 'pointer-events-none'}`} onClick={handleSendMessage}>
+          <button className={`flex items-end ${(input && pdfUrl) ? '' : 'pointer-events-none'}`} onClick={handleSendMessage}>
             <svg
-              className={`w-8 h-8 ${input ? 'fill-blue-500' : 'fill-neutral-300'}`}
+              className={`w-8 h-8 ${(input && pdfUrl) ? 'fill-blue-500' : 'fill-neutral-300'}`}
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
