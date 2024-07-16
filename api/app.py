@@ -1,10 +1,7 @@
 import os
 from dotenv import load_dotenv
 import atexit
-import tempfile
-import logging
 from io import BytesIO
-from typing import Any, List
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -21,54 +18,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_community.document_loaders import PyMuPDFLoader
-from langchain_community.document_loaders.parsers.pdf import (
-    PyMuPDFParser
-)
-from langchain_core.document_loaders import Blob
-from langchain_core.documents import Document
-
-class BytesIOPyMuPDFLoader(PyMuPDFLoader):
-    """Load `PDF` files using `PyMuPDF` from a BytesIO stream."""
-
-    def __init__(
-        self,
-        pdf_stream: BytesIO,
-        *,
-        extract_images: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize with a BytesIO stream."""
-        try:
-            import fitz  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "`PyMuPDF` package not found, please install it with "
-                "`pip install pymupdf`"
-            )
-        # We don't call the super().__init__ here because we don't have a file_path.
-        self.pdf_stream = pdf_stream
-        self.extract_images = extract_images
-        self.text_kwargs = kwargs
-
-    def load(self, **kwargs: Any) -> List[Document]:
-        """Load file."""
-        if kwargs:
-            logging.warning(
-                f"Received runtime arguments {kwargs}. Passing runtime args to `load`"
-                f" is deprecated. Please pass arguments during initialization instead."
-            )
-
-        text_kwargs = {**self.text_kwargs, **kwargs}
-
-        # Use 'stream' as a placeholder for file_path since we're working with a stream.
-        blob = Blob.from_data(self.pdf_stream.getvalue(), path="stream")
-
-        parser = PyMuPDFParser(
-            text_kwargs=text_kwargs, extract_images=self.extract_images
-        )
-
-        return parser.parse(blob)
+from pdf_loader import BytesIOPyMuPDFLoader
 
 app = Flask(__name__)
 CORS(app)
