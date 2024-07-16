@@ -60,3 +60,9 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Failed to push changes"
     exit 1
 }
+
+git checkout $b1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Failed to checkout $b1"
+    exit 1
+}
