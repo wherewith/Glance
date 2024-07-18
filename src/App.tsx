@@ -2,7 +2,7 @@ import "./App.css"
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface Message {
   text: string;
