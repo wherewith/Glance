@@ -2,6 +2,8 @@ import "./App.css"
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.API_URL;
+
 interface Message {
   text: string;
   isUser: boolean;
@@ -18,7 +20,7 @@ function App() {
 
   const cleanup = async () => {
     try {
-      await axios.post('http://127.0.0.1:5000/cleanup');
+      await axios.post(`${API_URL}/cleanup`);
       setPdfUrl(null);
       setMessages([]);
     } catch (error) {
@@ -36,7 +38,7 @@ function App() {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      navigator.sendBeacon('http://127.0.0.1:5000/cleanup');
+      navigator.sendBeacon(`${API_URL}/cleanup`);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -78,7 +80,7 @@ function App() {
       formData.append('file', selectedFile);
 
       try {
-        await axios.post('http://127.0.0.1:5000/upload_file', formData, {
+        await axios.post(`${API_URL}/upload_file`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -94,7 +96,6 @@ function App() {
     }
   };
 
-
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
@@ -103,7 +104,7 @@ function App() {
     setInput('');
 
     try {
-      const response = await axios.post('http://127.0.0.1:5000/ask_question', {
+      const response = await axios.post(`${API_URL}/ask_question`, {
         question: input,
         session_id: sessionId,
       });
